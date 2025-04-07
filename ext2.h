@@ -81,7 +81,7 @@ struct Ext2File {
     uint32_t num_block_groups;
 };
 
-struct Ext2File ext2Open(char *fn);
+struct Ext2File *ext2Open(char *fn);
 void ext2Close(struct Ext2File *f);
 bool fetchBlock(struct Ext2File *f, uint32_t blockNum, void *buf);
 bool writeBlock(struct Ext2File *f, uint32_t blockNum, void *buf);
