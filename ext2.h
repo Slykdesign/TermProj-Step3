@@ -81,8 +81,8 @@ struct Ext2File {
     uint32_t num_block_groups;
 };
 
-struct Ext2File *openExt2(char *fn);
-void closeExt2(struct Ext2File *f);
+struct Ext2File ext2Open(char *fn);
+void ext2Close(struct Ext2File *f);
 bool fetchBlock(struct Ext2File *f, uint32_t blockNum, void *buf);
 bool writeBlock(struct Ext2File *f, uint32_t blockNum, void *buf);
 bool fetchSuperblock(struct Ext2File *f, uint32_t blockNum, struct Ext2Superblock *sb);
