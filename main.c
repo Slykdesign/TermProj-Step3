@@ -13,7 +13,7 @@ void displaySuperblock(struct Ext2Superblock *sb);
 void displayBGDT(struct Ext2BlockGroupDescriptor *bgdt, uint32_t num_block_groups);
 
 int main() {
-    struct Ext2File *ext2 = openExt2("./good-fixed-1k.vdi");
+    struct Ext2File *ext2 = ext2Open("./good-fixed-1k.vdi");
     if (!ext2) return 1;
 
     printf("Superblock from block 0\n");
@@ -22,7 +22,7 @@ int main() {
     printf("\nBlock group descriptor table:\n");
     displayBGDT(ext2->bgdt, ext2->num_block_groups);
 
-    closeExt2(ext2);
+    ext2Close(ext2);
     return 0;
 }
 
