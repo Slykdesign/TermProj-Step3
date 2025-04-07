@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct Ext2File *openExt2(char *fn) {
+struct Ext2File *ext2Open(char *fn) {
     struct Ext2File *ext2 = malloc(sizeof(struct Ext2File));
     if (!ext2) return NULL;
 
@@ -40,7 +40,7 @@ struct Ext2File *openExt2(char *fn) {
     return ext2;
 }
 
-void closeExt2(struct Ext2File *f) {
+void ext2Close(struct Ext2File *f) {
     if (f) {
         closePartition(f->partition);
         free(f->bgdt);
