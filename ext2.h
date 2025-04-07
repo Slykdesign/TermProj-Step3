@@ -85,6 +85,6 @@ bool writeSuperblock(Ext2File *f, uint32_t blockNum, Ext2Superblock *sb);
 bool fetchBGDT(Ext2File *f, uint32_t blockNum, Ext2BlockGroupDescriptor *bgdt);
 bool writeBGDT(Ext2File *f, uint32_t blockNum, Ext2BlockGroupDescriptor *bgdt);
 void displaySuperblock(Ext2Superblock *sb);
-void displayBlockGroupDescriptorTable(Ext2BlockGroupDescriptor *bgdt, uint32_t num_block_groups);
+void displayBGDT(Ext2BlockGroupDescriptor *bgdt, uint32_t num_block_groups);
 
 #endif
