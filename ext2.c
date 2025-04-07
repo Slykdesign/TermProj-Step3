@@ -60,19 +60,35 @@ bool writeBlock(struct Ext2File *f, uint32_t blockNum, void *buf) {
     return writePartition(f->partition, buf, f->block_size) == f->block_size;
 }
 
-bool fetchSuperblock(struct Ext2File *f, uint32_t blockNum, struct Ext2Superblock *sb) {
-    if (!fetchBlock(f, blockNum, sb)) return false;
-    return sb->s_magic == 0xEF53;
+bool fetchSuperblock(struct Ext2File *ext2, uint32_t blockNum, struct Ext2Superblock *sb) {
+    uint8_t buf[1024];
+    if (!fetchBlock(ext2, blockNum, buf)) return false;
+    return sb->s_magic == 0xef53;
 }
 
-bool writeSuperblock(struct Ext2File *f, uint32_t blockNum, struct Ext2Superblock *sb) {
-    return writeBlock(f, blockNum, sb);
+// Function to write the superblock to the Ext2 file system
+bool writeSuperblock(struct Ext2File *ext2, uint32_t blockNum, struct Ext2Superblock *sb) {
+    uint8_t buf[1024] = {0};
+    return writeBlock(ext2, blockNum, buf);
 }
 
-bool fetchBGDT(struct Ext2File *f, uint32_t blockNum, struct Ext2BlockGroupDescriptor *bgdt) {
-    return fetchBlock(f, blockNum, bgdt);
+// Function to read the block group descriptor table from the Ext2 file system
+bool fetchBGDT(struct Ext2File *ext2, uint32_t blockNum, struct Ext2BlockGroupDescriptor *bgdt) {
+    uint8_t *buf = malloc(ext2->block_size);
+    if (!buf) return false;
+    if (!fetchBlock(ext2, blockNum, buf)) {
+        free(buf);
+        return false;
+    }
+    free(buf);
+    return true;
 }
 
-bool writeBGDT(struct Ext2File *f, uint32_t blockNum, struct Ext2BlockGroupDescriptor *bgdt) {
-    return writeBlock(f, blockNum, bgdt);
+// Function to write the block group descriptor table to the Ext2 file system
+bool writeBGDT(struct Ext2File *ext2, uint32_t blockNum, struct Ext2BlockGroupDescriptor *bgdt) {
+    uint8_t *buf = malloc(ext2->block_size);
+    if (!buf) return false;
+    bool result = writeBlock(ext2, blockNum, buf);
+    free(buf);
+    return result;
 }
