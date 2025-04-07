@@ -102,7 +102,7 @@ void displaySuperblock(Ext2Superblock *sb) {
     printf("  Magic number: 0x%x\n", sb->s_magic);
 }
 
-void displayBlockGroupDescriptorTable(Ext2BlockGroupDescriptor *bgdt, uint32_t num_block_groups) {
+void displayBGDT(Ext2BlockGroupDescriptor *bgdt, uint32_t num_block_groups) {
     printf("Block Group Descriptor Table:\n");
     for (uint32_t i = 0; i < num_block_groups; i++) {
         printf("  Block group %u:\n", i);
