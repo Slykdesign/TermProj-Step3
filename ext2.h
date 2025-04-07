@@ -1,6 +1,8 @@
 #ifndef EXT2_H
 #define EXT2_H
 
+#include "vdi.h"
+#include "partition.h"
 #include <stdint.h>
 #include <stdbool.h>
 
