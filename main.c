@@ -11,7 +11,10 @@ void displayBuffer(uint8_t *buf, uint32_t count, uint64_t offset);
 
 int main() {
     Ext2File *ext2 = openExt2File("./good-fixed-1k.vdi");
-    if (!ext2) return 1;
+    if (!ext2) {
+        printf("Error opening ext2 file.\n");
+        return 1;
+    }
 
     printf("Superblock:\n");
     displaySuperblock(&ext2->superblock);
