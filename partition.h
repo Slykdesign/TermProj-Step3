@@ -13,9 +13,9 @@ typedef struct {
 
 MBRPartition* openPartition(const char *filename, int part);
 void closePartition(MBRPartition *partition);
-ssize_t readPartition(MBRPartition *partition, void *buf, size_t count);
+ssize_t vdiReadPartition(MBRPartition *partition, void *buf, size_t count);
 ssize_t writePartition(MBRPartition *partition, void *buf, size_t count);
-off_t lseekPartition(MBRPartition *partition, off_t offset, int anchor);
+off_t vdiSeekPartition(MBRPartition *partition, off_t offset, int anchor);
 void displayPartitionTable(MBRPartition *partition);
 
 #endif

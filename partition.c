@@ -1,4 +1,5 @@
 #include "partition.h"
+#include "vdi.h""
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -31,7 +32,7 @@ void closePartition(MBRPartition *partition) {
     }
 }
 
-ssize_t readPartition(MBRPartition *partition, void *buf, size_t count) {
+ssize_t vdiReadPartition(MBRPartition *partition, void *buf, size_t count) {
     size_t bytesRead = 0;
     uint8_t *buffer = (uint8_t *)buf;
 
@@ -75,7 +76,7 @@ ssize_t writePartition(MBRPartition *partition, void *buf, size_t count) {
     return bytesWritten;
 }
 
-off_t lseekPartition(MBRPartition *partition, off_t offset, int anchor) {
+off_t vdiSeekPartition(MBRPartition *partition, off_t offset, int anchor) {
     off_t newCursor;
     if (anchor == SEEK_SET) {
         newCursor = offset;
