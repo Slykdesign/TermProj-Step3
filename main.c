@@ -1,8 +1,6 @@
 #include "ext2.h"
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdint.h>
-#include <fcntl.h>
 #include <ctype.h>
 
 // Function prototypes
@@ -12,7 +10,6 @@ void displayBuffer(uint8_t *buf, uint32_t count, uint64_t offset);
 int main() {
     Ext2File *ext2 = openExt2File("./good-fixed-1k.vdi");
     if (!ext2) {
-        printf("Error opening ext2 file.\n");
         return 1;
     }
 
