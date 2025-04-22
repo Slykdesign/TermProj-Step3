@@ -30,7 +30,7 @@ int main() {
 }
 
 // Function Definitions
-void displayBufferPage(uint8_t *buf, uint32_t count, uint32_t skip, uint64_t offset) {
+void displayBufferPage(const uint8_t *buf, uint32_t count, uint32_t skip, uint64_t offset) {
     printf("Offset: 0x%lx\n", offset);
     for (uint32_t i = skip; i < count; i += 16) {
         printf("%04x | ", i);
