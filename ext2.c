@@ -41,7 +41,7 @@ struct Ext2File *openExt2(char *fn) {
     }
 
     // Read the block group descriptor table
-    uint32_t bgdt_block = (ext2->block_size == 1024) ? 2 : 1;if (!fetchBGDT(ext2, bgdt_block, ext2->bgdt)) {
+    if (!fetchBGDT(ext2, 2, ext2->bgdt)) {
         closePartition(ext2->partition);
         free(ext2->bgdt);
         free(ext2);
