@@ -10,7 +10,7 @@
 ###### Use the partition-level open() function to open the given VDI file. Access the partition table and look for the first partition whose type is 0x83, which indicates a Linux filesystem. Use that partition.
 ##### • void close(struct Ext2File *f)
 ###### Close the file whose pointer is given. Deallocate any dynamically created memory regions.
-## Low-level ext2 access involves three structures — blocks, superblocks and block group descriptors.
+#### Low-level ext2 access involves three structures — blocks, superblocks and block group descriptors.
 ### Blocks
 #### All space in an ext2 partition is divided into fixed-size blocks. The size of the blocks is determined by the superblock. With one exception, all disk access is performed by reading or writing entire blocks. To that end, you will need two block access functions:
 ##### • bool fetchBlock(struct Ext2File *f, uint32_t blockNum, void *buf)
