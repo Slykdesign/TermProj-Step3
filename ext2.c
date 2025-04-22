@@ -4,8 +4,8 @@
 #include <string.h>
 #include <unistd.h>
 
-Ext2File *openExt2File(const char *filename) {
-    Ext2File *ext2 = malloc(sizeof(Ext2File));
+struct Ext2File *openExt2(char *filename) {
+    struct Ext2File *ext2 = malloc(sizeof(struct Ext2File));
     if (!ext2) return NULL;
 
     ext2->partition = openPartition(filename, 0);
@@ -51,7 +51,7 @@ Ext2File *openExt2File(const char *filename) {
     return ext2;
 }
 
-void closeExt2File(Ext2File *f) {
+void closeExt2(struct Ext2File *f) {
     if (f) {
         closePartition(f->partition);
         free(f->bgdt);
@@ -59,32 +59,32 @@ void closeExt2File(Ext2File *f) {
     }
 }
 
-bool fetchBlock(Ext2File *f, uint32_t blockNum, void *buf) {
+bool fetchBlock(struct Ext2File *f, uint32_t blockNum, void *buf) {
     off_t offset = (blockNum + f->superblock.s_first_data_block) * f->block_size;
     if (vdiSeekPartition(f->partition, offset, SEEK_SET) < 0) return false;
     return vdiReadPartition(f->partition, buf, f->block_size) == f->block_size;
 }
 
-bool writeBlock(Ext2File *f, uint32_t blockNum, void *buf) {
+bool writeBlock(struct Ext2File *f, uint32_t blockNum, void *buf) {
     off_t offset = (blockNum + f->superblock.s_first_data_block) * f->block_size;
     if (vdiSeekPartition(f->partition, offset, SEEK_SET) < 0) return false;
     return writePartition(f->partition, buf, f->block_size) == f->block_size;
 }
 
-bool fetchSuperblock(Ext2File *f, uint32_t blockNum, Ext2Superblock *sb) {
+bool fetchSuperblock(struct Ext2File *f, uint32_t blockNum, Ext2Superblock *sb) {
     if (!fetchBlock(f, blockNum, sb)) return false;
     return sb->s_magic == 0xEF53;
 }
 
-bool writeSuperblock(Ext2File *f, uint32_t blockNum, Ext2Superblock *sb) {
+bool writeSuperblock(struct Ext2File *f, uint32_t blockNum, Ext2Superblock *sb) {
     return writeBlock(f, blockNum, sb);
 }
 
-bool fetchBGDT(Ext2File *f, uint32_t blockNum, Ext2BlockGroupDescriptor *bgdt) {
+bool fetchBGDT(struct Ext2File *f, uint32_t blockNum, Ext2BlockGroupDescriptor *bgdt) {
     return fetchBlock(f, blockNum, bgdt);
 }
 
-bool writeBGDT(Ext2File *f, uint32_t blockNum, Ext2BlockGroupDescriptor *bgdt) {
+bool writeBGDT(struct Ext2File *f, uint32_t blockNum, Ext2BlockGroupDescriptor *bgdt) {
     return writeBlock(f, blockNum, bgdt);
 }
 
