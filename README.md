@@ -23,10 +23,9 @@
 ### You should write two functions for superblock access:
 #### • bool fetchSuperblock(struct Ext2File *f,uint32_t blockNum,
 #### struct Ext2Superblock *sb)
-##### Read the superblock found in the given block number from the file system into the buffer.
-##### Return true for success, false for failure.
+##### Read the superblock found in the given block number from the file system into the buffer. Return true for success, false for failure.
 #### • bool writeSuperblock(struct Ext2File *f,uint32_t blockNum, struct Ext2Superblock *sb)
-### Write the superblock to the given block. Return true for success, false for failure. For these, use partition-level lseek(), read() and write() to access the main superblock in block 0; use fetchBlock() and writeBlock() to access other copies of the superblock. Verify that you have read a valid superblock by checking the s_magic field, it should be 0xef53.
+##### Write the superblock to the given block. Return true for success, false for failure. For these, use partition-level lseek(), read() and write() to access the main superblock in block 0; use fetchBlock() and writeBlock() to access other copies of the superblock. Verify that you have read a valid superblock by checking the s_magic field, it should be 0xef53.
 ## Block Groups and Their Descriptors
 ### Blocks are split into block groups; groups act as a crude form of low-level disk access optimization, as the system typically tries to place all of the data blocks for one file in one block group. Each block group contains the following items:
 #### • A copy of the superblock, if the block group number is 0, 1 or a power of 3, 5 or 7. This is always contained in the first block of the group.
