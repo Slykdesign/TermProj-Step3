@@ -3,12 +3,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 
-struct Ext2File *openExt2(const char *filename) {
+struct Ext2File *openExt2(char *fn) {
     struct Ext2File *ext2 = malloc(sizeof(struct Ext2File));
     if (!ext2) return NULL;
 
-    ext2->partition = openPartition(filename, 0);
+    ext2->partition = openPartition(fn, 0);
     if (!ext2->partition) {
         free(ext2);
         return NULL;
@@ -41,8 +42,7 @@ struct Ext2File *openExt2(const char *filename) {
     }
 
     // Read the block group descriptor table
-    uint32_t bgdt_block = (ext2->block_size == 1024) ? 2 : 1;
-    if (!fetchBGDT(ext2, bgdt_block, ext2->bgdt)) {
+    uint32_t bgdt_block = (ext2->block_size == 1024) ? 2 : 1;if (!fetchBGDT(ext2, bgdt_block, ext2->bgdt)) {
         closePartition(ext2->partition);
         free(ext2->bgdt);
         free(ext2);

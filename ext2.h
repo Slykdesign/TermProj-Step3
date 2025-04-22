@@ -69,8 +69,6 @@ typedef struct {
 } Ext2BlockGroupDescriptor;
 
 struct Ext2File{
-    FILE *fd;
-    VDIFile *vdi;
     MBRPartition *partition;
     Ext2Superblock superblock;
     Ext2BlockGroupDescriptor *bgdt;
@@ -78,7 +76,7 @@ struct Ext2File{
     uint32_t num_block_groups;
 };
 
-struct Ext2File *openExt2(const char *fn);
+struct Ext2File *openExt2(char *fn);
 void closeExt2(struct Ext2File *f);
 bool fetchBlock(struct Ext2File *f, uint32_t blockNum, void *buf);
 bool writeBlock(struct Ext2File *f, uint32_t blockNum, void *buf);
