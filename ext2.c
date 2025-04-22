@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <time.h>
 
 struct Ext2File *openExt2(char *fn) {
     struct Ext2File *ext2 = malloc(sizeof(struct Ext2File));
