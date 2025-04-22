@@ -78,15 +78,15 @@ struct Ext2File{
     uint32_t num_block_groups;
 };
 
-struct Ext2File *openExt2File(char *fn);
-void closeExt2File(struct Ext2File *f);
+struct Ext2File *openExt2(const char *fn);
+void closeExt2(struct Ext2File *f);
 bool fetchBlock(struct Ext2File *f, uint32_t blockNum, void *buf);
 bool writeBlock(struct Ext2File *f, uint32_t blockNum, void *buf);
 bool fetchSuperblock(struct Ext2File *f, uint32_t blockNum, Ext2Superblock *sb);
 bool writeSuperblock(struct Ext2File *f, uint32_t blockNum, Ext2Superblock *sb);
 bool fetchBGDT(struct Ext2File *f, uint32_t blockNum, Ext2BlockGroupDescriptor *bgdt);
 bool writeBGDT(struct Ext2File *f, uint32_t blockNum, Ext2BlockGroupDescriptor *bgdt);
-void displaySuperblock(Ext2Superblock *sb);
-void displayBGDT(Ext2BlockGroupDescriptor *bgdt, uint32_t num_block_groups);
+void displaySuperblock(const Ext2Superblock *sb);
+void displayBGDT(const Ext2BlockGroupDescriptor *bgdt, uint32_t num_block_groups);
 
 #endif
