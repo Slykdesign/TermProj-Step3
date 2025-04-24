@@ -5,6 +5,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define EXT2_SUPERBLOCK_OFFSET 1024  // Offset of the superblock in bytes
+#define EXT2_SUPERBLOCK_SIZE sizeof(Ext2Superblock)  // Size of the superblock structure
+
 typedef struct {
     uint32_t s_inodes_count;
     uint32_t s_blocks_count;
@@ -67,14 +70,13 @@ typedef struct {
     uint32_t bg_reserved[3];
 } Ext2BlockGroupDescriptor;
 
-struct Ext2File{
-    FILE *fd;
-    VDIFile *vdi;
+struct Ext2File {
+    int fd;
     MBRPartition *partition;
+    uint32_t blockSize;
+    uint32_t numBlockGroups;
     Ext2Superblock superblock;
     Ext2BlockGroupDescriptor *bgdt;
-    uint32_t block_size;
-    uint32_t num_block_groups;
 };
 
 struct Ext2File *openExt2(char *fn);
@@ -85,7 +87,7 @@ bool fetchSuperblock(struct Ext2File *f, uint32_t blockNum, Ext2Superblock *sb);
 bool writeSuperblock(struct Ext2File *f, uint32_t blockNum, Ext2Superblock *sb);
 bool fetchBGDT(struct Ext2File *f, uint32_t blockNum, Ext2BlockGroupDescriptor *bgdt);
 bool writeBGDT(struct Ext2File *f, uint32_t blockNum, Ext2BlockGroupDescriptor *bgdt);
-void displaySuperblock(const Ext2Superblock *sb);
-void displayBGDT(const Ext2BlockGroupDescriptor *bgdt, uint32_t num_block_groups);
+void displaySuperblock(Ext2Superblock *sb);
+void displayBGDT(Ext2BlockGroupDescriptor *bgdt, uint32_t numBlockGroups);
 
 #endif
