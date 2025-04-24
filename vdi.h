@@ -33,6 +33,7 @@ typedef struct {
     char linkUuid[16];
     char parentUuid[16];
     char comment[256];       // Image comment
+
 } VDIHeader;
 
 typedef struct {
