@@ -69,7 +69,7 @@ struct Ext2File *openExt2(char *fn) {
     }
 
     // Validate the superblock magic number
-    if (ext2->superblock.s_magic != 0xEF53) {
+    if (ext2->superblock.s_magic != EXT2_SUPER_MAGIC) {
         printf("Invalid superblock magic number (0x%X).\n", ext2->superblock.s_magic);
         closePartition(ext2->partition);
         free(ext2);
@@ -83,7 +83,7 @@ struct Ext2File *openExt2(char *fn) {
     // Allocate memory for block group descriptor table
     ext2->bgdt = malloc(ext2->numBlockGroups * sizeof(Ext2BlockGroupDescriptor));
     if (!ext2->bgdt) {
-        printf(stderr, "Failed to allocate memory for block group descriptor table.\n");
+        printf("Failed to allocate memory for block group descriptor table.\n");
         closePartition(ext2->partition);
         free(ext2);
         return NULL;
@@ -92,7 +92,7 @@ struct Ext2File *openExt2(char *fn) {
     // Fetch the block group descriptor table
     uint32_t bgdt_block = (ext2->blockSize == 1024) ? 2 : 1;
     if (!fetchBGDT(ext2, bgdt_block, ext2->bgdt)) {
-        printf(stderr, "Failed to fetch block group descriptor table.\n");
+        printf("Failed to fetch block group descriptor table.\n");
         closePartition(ext2->partition);
         free(ext2->bgdt);
         free(ext2);
