@@ -61,34 +61,70 @@ void closeExt2(struct Ext2File *f) {
 }
 
 bool fetchBlock(struct Ext2File *f, uint32_t blockNum, void *buf) {
-    off_t offset = (blockNum + f->superblock.s_first_data_block) * f->block_size;
-    if (vdiSeekPartition(f->partition, offset, SEEK_SET) < 0) return false;
-    return vdiReadPartition(f->partition, buf, f->block_size) == f->block_size;
+    uint64_t offset = blockNum * f->blockSize;
+    return vdiSeekPartition(f->partition, offset, SEEK_SET) != -1 &&
+           vdiReadPartition(f->partition, buf, f->blockSize) == (ssize_t)f->blockSize;
 }
 
 bool writeBlock(struct Ext2File *f, uint32_t blockNum, void *buf) {
-    off_t offset = (blockNum + f->superblock.s_first_data_block) * f->block_size;
-    if (vdiSeekPartition(f->partition, offset, SEEK_SET) < 0) return false;
-    return writePartition(f->partition, buf, f->block_size) == f->block_size;
+    uint64_t offset = blockNum * f->blockSize;
+    return vdiSeekPartition(f->partition, offset, SEEK_SET) != -1 &&
+           writePartition(f->partition, buf, f->blockSize) == (ssize_t)f->blockSize;
 }
 
 bool fetchSuperblock(struct Ext2File *f, uint32_t blockNum, Ext2Superblock *sb) {
-    (void)blockNum; // Unused, superblock is always at offset 1024
-    if (vdiSeekPartition(f->partition, 1024, SEEK_SET) < 0) return false;
-    if (vdiReadPartition(f->partition, sb, sizeof(Ext2Superblock)) != sizeof(Ext2Superblock)) return false;
+    uint8_t buf[1024];
+    if (!fetchBlock(f, blockNum, buf)) return false;
+
+    memcpy(sb, buf, sizeof(Ext2Superblock));
     return sb->s_magic == 0xEF53;
 }
 
 bool writeSuperblock(struct Ext2File *f, uint32_t blockNum, Ext2Superblock *sb) {
-    return writeBlock(f, blockNum, sb);
+    uint8_t buf[1024];
+    memset(buf, 0, sizeof(buf));  // Clear the buffer
+    memcpy(buf, sb, sizeof(Ext2Superblock));  // Copy the superblock into the buffer
+
+    // Write the block containing the superblock
+    if (!writeBlock(f, blockNum, buf)) {
+        return false;
+    }
+
+    // Verify the written block by checking the magic number
+    Ext2Superblock temp;
+    if (!fetchSuperblock(f, blockNum, &temp)) {
+        return false;
+    }
+
+    return temp.s_magic == 0xEF53;  // Ensure the superblock was written correctly
 }
 
 bool fetchBGDT(struct Ext2File *f, uint32_t blockNum, Ext2BlockGroupDescriptor *bgdt) {
-    return fetchBlock(f, blockNum, bgdt);
+    uint8_t *buffer = malloc(f->blockSize);
+    if (!buffer) return false;
+
+    if (!fetchBlock(f, blockNum, buffer)) {
+        free(buffer);
+        return false;
+    }
+
+    memcpy(bgdt, buffer, f->numBlockGroups * sizeof(Ext2BlockGroupDescriptor));
+    free(buffer);
+
+    return true;
 }
 
 bool writeBGDT(struct Ext2File *f, uint32_t blockNum, Ext2BlockGroupDescriptor *bgdt) {
-    return writeBlock(f, blockNum, bgdt);
+    uint8_t *buffer = malloc(f->blockSize);
+    if (!buffer) return false;
+
+    memset(buffer, 0, f->blockSize);
+    memcpy(buffer, bgdt, f->numBlockGroups * sizeof(Ext2BlockGroupDescriptor));
+
+    bool result = writeBlock(f, blockNum, buffer);
+    free(buffer);
+
+    return result;
 }
 
 void displaySuperblock(const Ext2Superblock *sb) {
