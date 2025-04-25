@@ -21,8 +21,7 @@
 ### Superblocks
 #### The superblock is the main data structure in a UNIX file system. A good description of the structure can be found at https://www.nongnu.org/ext2-doc/ext2.html. The main superblock is always located at an offset of 1024 bytes from the start of the disk partition, regardless of block size. Backup copies of the superblock are stored at various locations throughout the partition (see next section), always at the beginning of a block. You should read the main superblock and store it in the structure you create for this step. There are two important values that the superblock does not directly contain, but need to be calculated from values in the superblock. The first value is the file system’s block size. It is derived from the s_log_block_sizefield: b = 1024·2^(s_log_block_size). The second value is the number of block groups, derived from the s_blocks_count and s_blocks_per_group fields: n = ⌈s_blocks_count/s_blocks_per_group⌉. Calculate these values and store them in the structure you create for this step.
 ### You should write two functions for superblock access:
-#### • bool fetchSuperblock(struct Ext2File *f,uint32_t blockNum,
-#### struct Ext2Superblock *sb)
+#### • bool fetchSuperblock(struct Ext2File *f, uint32_t blockNum, struct Ext2Superblock *sb)
 ##### Read the superblock found in the given block number from the file system into the buffer. Return true for success, false for failure.
 #### • bool writeSuperblock(struct Ext2File *f,uint32_t blockNum, struct Ext2Superblock *sb)
 ##### Write the superblock to the given block. Return true for success, false for failure. For these, use partition-level lseek(), read() and write() to access the main superblock in block 0; use fetchBlock() and writeBlock() to access other copies of the superblock. Verify that you have read a valid superblock by checking the s_magic field, it should be 0xef53.
@@ -35,9 +34,9 @@
 #### • A portion of the inode array.
 #### • Data blocks.
 ### A block group descriptor is a small structure that contains the block numbers of a group’s bitmaps and the first block of the inode table, along with the number of unused blocks and inodes. See the link in the previous section for information about this structure. You will need to read the main copy of the descriptor table and store it in the structure you create for this step. Since the table size is unknown until calculating the number of block groups, you will have to allocate the table space dynamically. To access the table, implement these two functions:
-#### • bool fetchBGDT(struct Ext2File *f,uint32_t blockNum,struct Ext2BlockGroupDescriptor *bgdt)
+#### • bool fetchBGDT(struct Ext2File *f, uint32_t blockNum, struct Ext2BlockGroupDescriptor *bgdt)
 ##### Read the block group descriptor table that begins at the given block number. Store the table in the array pointed to by bgdt. Return true for success, false for failure.
-#### • bool writeBGDT(struct Ext2File *f,uint32_t blockNum,struct Ext2BlockGroupDescriptor *bgdt)
+#### • bool writeBGDT(struct Ext2File *f, uint32_t blockNum, struct Ext2BlockGroupDescriptor *bgdt)
 ##### Write the block group descriptor table to the file system starting at the given block number. Return true for success, false for failure.
 ### Other Functions
 ### You will probably want a function to display a superblock with the fields labeled and in text form and a function to display the values in the block group descriptor table. The following examples illustrate my version of these.
