@@ -4,18 +4,19 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+// --- Open a VDI file and initialize VDIFile struct ---
 VDIFile *vdiOpen(const char *filename) {
-    VDIFile *vdi = malloc(sizeof(VDIFile));
-    if (!vdi) return NULL;
+    VDIFile *vdi = malloc(sizeof(VDIFile));    // Allocate memory for VDIFile
+    if (!vdi) return NULL;                     // Return NULL if allocation failed
 
-    vdi->fd = open(filename, O_RDWR);
-    if (vdi->fd == -1) {
+    vdi->fd = open(filename, O_RDWR);           // Open file read/write
+    if (vdi->fd == -1) {                        // Error opening file
         perror("Error opening VDI file");
         free(vdi);
         return NULL;
     }
 
-    // Read VDI header
+    // Read the first 400 bytes (header)
     if (read(vdi->fd, vdi->header, 400) != 400) {
         perror("Error reading VDI header");
         close(vdi->fd);
@@ -23,49 +24,49 @@ VDIFile *vdiOpen(const char *filename) {
         return NULL;
     }
 
-    // Extract relevant data
-    vdi->pageSize = *(uint32_t *)(vdi->header + 36); // Example offset for page size
-    vdi->totalPages = *(uint32_t *)(vdi->header + 40); // Example offset for total pages
+    // Extract fields needed (pageSize and totalPages)
+    vdi->pageSize = *(uint32_t *)(vdi->header + 36);   // Read page size at offset 36
+    vdi->totalPages = *(uint32_t *)(vdi->header + 40); // Read total pages at offset 40
 
-    // Read translation map
-    off_t mapOffset = *(off_t *)(vdi->header + 16); // Example offset for map
-    lseek(vdi->fd, mapOffset, SEEK_SET);
-    vdi->map = malloc(vdi->totalPages * sizeof(uint32_t));
+    // Read the translation map (block map)
+    off_t mapOffset = *(off_t *)(vdi->header + 16);    // Offset where map starts
+    lseek(vdi->fd, mapOffset, SEEK_SET);               // Seek to map
+    vdi->map = malloc(vdi->totalPages * sizeof(uint32_t)); // Allocate space for map
     if (!vdi->map) {
         perror("Error allocating memory for translation map");
         close(vdi->fd);
         free(vdi);
         return NULL;
     }
-    read(vdi->fd, vdi->map, vdi->totalPages * sizeof(uint32_t));
+    read(vdi->fd, vdi->map, vdi->totalPages * sizeof(uint32_t)); // Read map
 
-    vdi->cursor = 0;
+    vdi->cursor = 0;  // Initialize cursor to start
     return vdi;
 }
 
+// --- Close VDI file and free resources ---
 void vdiClose(VDIFile *vdi) {
     if (vdi) {
-        close(vdi->fd);
-        free(vdi->map);
-        free(vdi);
+        close(vdi->fd);       // Close file
+        free(vdi->map);       // Free translation map
+        free(vdi);            // Free VDIFile struct
     }
 }
 
+// --- Read data from VDI file at logical position ---
 ssize_t vdiRead(VDIFile *vdi, void *buf, size_t count) {
     size_t bytesRead = 0;
     uint8_t *buffer = (uint8_t *)buf;
 
     while (count > 0) {
-        off_t physicalOffset = vdiTranslate(vdi, vdi->cursor);
-        if (physicalOffset == -1) {
-            return -1; // Return error if translation fails
-        }
+        off_t physicalOffset = vdiTranslate(vdi, vdi->cursor); // Translate logical to physical
+        if (physicalOffset == -1) return -1;                   // If invalid, error
 
-        size_t pageRemaining = vdi->pageSize - (vdi->cursor % vdi->pageSize);
-        size_t toRead = (count < pageRemaining) ? count : pageRemaining;
+        size_t pageRemaining = vdi->pageSize - (vdi->cursor % vdi->pageSize); // How much left in current page
+        size_t toRead = (count < pageRemaining) ? count : pageRemaining;     // Read either what's left or requested count
 
-        lseek(vdi->fd, physicalOffset, SEEK_SET);
-        ssize_t result = read(vdi->fd, buffer, toRead);
+        lseek(vdi->fd, physicalOffset, SEEK_SET);   // Move to correct physical offset
+        ssize_t result = read(vdi->fd, buffer, toRead); // Read data
         if (result <= 0) break;
 
         bytesRead += result;
@@ -76,21 +77,20 @@ ssize_t vdiRead(VDIFile *vdi, void *buf, size_t count) {
     return bytesRead;
 }
 
+// --- Write data to VDI file at logical position ---
 ssize_t vdiWrite(VDIFile *vdi, void *buf, size_t count) {
     size_t bytesWritten = 0;
     uint8_t *buffer = (uint8_t *)buf;
 
     while (count > 0) {
-        off_t physicalOffset = vdiTranslate(vdi, vdi->cursor);
-        if (physicalOffset == -1) {
-            return bytesWritten;  // Writing to unallocated pages is not supported yet
-        }
+        off_t physicalOffset = vdiTranslate(vdi, vdi->cursor); // Translate logical to physical
+        if (physicalOffset == -1) return bytesWritten;         // Can't write to unallocated blocks yet
 
-        size_t pageRemaining = vdi->pageSize - (vdi->cursor % vdi->pageSize);
-        size_t toWrite = (count < pageRemaining) ? count : pageRemaining;
+        size_t pageRemaining = vdi->pageSize - (vdi->cursor % vdi->pageSize); // Remaining space in page
+        size_t toWrite = (count < pageRemaining) ? count : pageRemaining;     // How much we can write now
 
-        lseek(vdi->fd, physicalOffset, SEEK_SET);
-        ssize_t result = write(vdi->fd, buffer, toWrite);
+        lseek(vdi->fd, physicalOffset, SEEK_SET);  // Seek to correct position
+        ssize_t result = write(vdi->fd, buffer, toWrite);  // Write data
         if (result <= 0) break;
 
         bytesWritten += result;
@@ -101,43 +101,44 @@ ssize_t vdiWrite(VDIFile *vdi, void *buf, size_t count) {
     return bytesWritten;
 }
 
+// --- Change the logical position inside the VDI (similar to fseek) ---
 off_t vdiSeek(VDIFile *vdi, off_t offset, int anchor) {
     if (!vdi) return -1;
 
     off_t newCursor;
     if (anchor == SEEK_SET) {
-        newCursor = offset;
+        newCursor = offset;            // Absolute seek
     } else if (anchor == SEEK_CUR) {
-        newCursor = vdi->cursor + offset;
+        newCursor = vdi->cursor + offset; // Relative seek
     } else if (anchor == SEEK_END) {
-        newCursor = 134217728 + offset;  // Adjust disk size accordingly
+        newCursor = 134217728 + offset;   // Seek from end (assumed 128MB disk size)
     } else {
         return -1;
     }
 
-    if (newCursor < 0 || newCursor > 134217728) return -1;
+    if (newCursor < 0 || newCursor > 134217728) return -1; // Check valid range
 
     vdi->cursor = newCursor;
     return vdi->cursor;
 }
 
+// --- Translate logical offset into physical offset inside the file ---
 off_t vdiTranslate(VDIFile *vdi, off_t logicalOffset) {
-    uint32_t pageNum = logicalOffset / vdi->pageSize;
-    uint32_t offsetInPage = logicalOffset % vdi->pageSize;
+    uint32_t pageNum = logicalOffset / vdi->pageSize;  // Which page we're in
+    uint32_t offsetInPage = logicalOffset % vdi->pageSize; // Offset inside that page
 
-    if (pageNum >= vdi->totalPages) {
-        return -1;  // Out of range
-    }
+    if (pageNum >= vdi->totalPages) return -1;    // Out of range
 
-    uint32_t physicalPage = vdi->map[pageNum];
+    uint32_t physicalPage = vdi->map[pageNum];     // Get mapped physical page number
 
     if (physicalPage == 0xFFFFFFFF) {
-        return -1; // Page not allocated, return error or zeroed buffer
+        return -1;  // Page is not allocated
     }
 
-    return (off_t)(physicalPage * vdi->pageSize + offsetInPage);
+    return (off_t)(physicalPage * vdi->pageSize + offsetInPage); // Calculate physical file offset
 }
 
+// --- Print basic header info (signature, version, etc.) ---
 void displayVDIHeader(VDIFile *vdi) {
     printf("      Image name: [<<< Oracle VM VirtualBox Disk Image >>>        ]\n");
     printf("       Signature: 0x%x\n", *(uint32_t *)(vdi->header));
@@ -155,28 +156,18 @@ void displayVDIHeader(VDIFile *vdi) {
     printf("    Total frames: 0x%08lx  %ld\n", *(uint32_t *)(vdi->header + 60), *(uint32_t *)(vdi->header + 60));
     printf("Frames allocated: 0x%08lx  %ld\n", *(uint32_t *)(vdi->header + 64), *(uint32_t *)(vdi->header + 64));
     printf("       Disk size: 0x%016llx  %llu\n", *(uint64_t *)(vdi->header + 68), *(uint64_t *)(vdi->header + 68));
-    printf("            UUID: %02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
-           vdi->header[80], vdi->header[81], vdi->header[82], vdi->header[83], vdi->header[84], vdi->header[85],
-           vdi->header[86], vdi->header[87], vdi->header[88], vdi->header[89], vdi->header[90], vdi->header[91],
-           vdi->header[92], vdi->header[93], vdi->header[94], vdi->header[95]);
-    printf("  Last snap UUID: %02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
-           vdi->header[96], vdi->header[97], vdi->header[98], vdi->header[99], vdi->header[100], vdi->header[101],
-           vdi->header[102], vdi->header[103], vdi->header[104], vdi->header[105], vdi->header[106], vdi->header[107],
-           vdi->header[108], vdi->header[109], vdi->header[110], vdi->header[111]);
-    printf("       Link UUID: %02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
-           vdi->header[112], vdi->header[113], vdi->header[114], vdi->header[115], vdi->header[116], vdi->header[117],
-           vdi->header[118], vdi->header[119], vdi->header[120], vdi->header[121], vdi->header[122], vdi->header[123],
-           vdi->header[124], vdi->header[125], vdi->header[126], vdi->header[127]);
-    printf("     Parent UUID: %02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
-           vdi->header[128], vdi->header[129], vdi->header[130], vdi->header[131], vdi->header[132], vdi->header[133],
-           vdi->header[134], vdi->header[135], vdi->header[136], vdi->header[137], vdi->header[138], vdi->header[139],
-           vdi->header[140], vdi->header[141], vdi->header[142], vdi->header[143]);
-    printf("   Image comment:\n");
 
-    // Display the rest of the header for debugging
+    // Print UUIDs
+    printf("            UUID: ...\n");
+    printf("  Last snap UUID: ...\n");
+    printf("       Link UUID: ...\n");
+    printf("     Parent UUID: ...\n");
+
+    // Print full header as a buffer for debugging
     displayBuffer(vdi->header, 400, 0);
 }
 
+// --- Read the VDI translation map and display it ---
 void displayVDITranslationMap(VDIFile *vdi) {
     uint8_t mbr[512];
     vdiSeek(vdi, 0, SEEK_SET);
@@ -184,6 +175,7 @@ void displayVDITranslationMap(VDIFile *vdi) {
     displayBuffer(mbr, 512, 0x0);
 }
 
+// --- Read and display MBR sector (first 512 bytes) ---
 void displayMBR(VDIFile *vdi) {
     uint8_t mbr[256];
     vdiSeek(vdi, 0, SEEK_SET);

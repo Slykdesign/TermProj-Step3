@@ -3,10 +3,10 @@
 
 #include "partition.h"
 #include <stdint.h>
-#include <stdbool.h>
 
 #define EXT2_SUPERBLOCK_OFFSET 1024  // Offset of the superblock in bytes
 #define EXT2_SUPERBLOCK_SIZE sizeof(Ext2Superblock)  // Size of the superblock structure
+#define EXT2_SUPER_MAGIC 0xEF53
 
 typedef struct {
     uint32_t s_inodes_count;
@@ -81,6 +81,7 @@ struct Ext2File {
 
 struct Ext2File *openExt2(char *fn);
 void closeExt2(struct Ext2File *f);
+static bool isValidSuperblock(Ext2Superblock *sb);
 bool fetchBlock(struct Ext2File *f, uint32_t blockNum, void *buf);
 bool writeBlock(struct Ext2File *f, uint32_t blockNum, void *buf);
 bool fetchSuperblock(struct Ext2File *f, uint32_t blockNum, Ext2Superblock *sb);
